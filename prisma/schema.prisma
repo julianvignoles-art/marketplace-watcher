@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model WishlistItem {
+  id            String   @id @default(cuid())
+  label         String
+  keywords      String // comma-separated, all must appear (AND) in listing title/desc
+  excludeWords  String  @default("") // comma-separated, none may appear
+  maxPrice      Int? // in whole currency units, null = no ceiling
+  minPrice      Int?
+  location      String  @default("") // free-text place name used to build the search URL
+  radiusMiles   Int      @default(40)
+  category      String  @default("") // optional FB category slug
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  listings      Listing[]
+}
+
+model Listing {
+  id             String       @id @default(cuid())
+  wishlistItemId String
+  wishlistItem   WishlistItem @relation(fields: [wishlistItemId], references: [id], onDelete: Cascade)
+  fbItemId       String // parsed from the marketplace URL, used for de-duping
+  title          String
+  price          Int?
+  currency       String       @default("USD")
+  url            String
+  imageUrl       String       @default("")
+  locationText   String       @default("")
+  firstSeenAt    DateTime     @default(now())
+  dismissed      Boolean      @default(false)
+  notifiedAt     DateTime?
+
+  @@unique([wishlistItemId, fbItemId])
+}
+
+model Setting {
+  key   String @id
+  value String
+}
+
+model ScanRun {
+  id          String   @id @default(cuid())
+  startedAt   DateTime @default(now())
+  finishedAt  DateTime?
+  status      String   @default("running") // running | ok | error
+  newMatches  Int      @default(0)
+  error       String   @default("")
+  trigger     String   @default("manual") // manual | internal-cron | external
+}

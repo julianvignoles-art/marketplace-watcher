@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+  body {
+    @apply bg-paper text-ink-950 font-body antialiased;
+    background-image:
+      radial-gradient(rgba(32, 28, 21, 0.05) 1px, transparent 1.2px),
+      radial-gradient(rgba(32, 28, 21, 0.035) 1px, transparent 1.2px);
+    background-size: 3px 3px, 7px 7px;
+    background-position: 0 0, 2px 3px;
+    background-attachment: fixed;
+  }
+  ::selection {
+    background: rgba(175, 58, 42, 0.22);
+  }
+}
+
+@layer components {
+  /* A listing pinned to the board: a slightly crooked index card with a
+     drawn push-pin. Rotation alternates per position so the grid doesn't
+     read as a rigid table of tiles. */
+  .pinned-card {
+    @apply relative bg-paper-card border border-rule/70 rounded-xl2 shadow-pin;
+  }
+  .pinned-card::before {
+    content: "";
+    position: absolute;
+    top: -7px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 12px;
+    height: 12px;
+    border-radius: 999px;
+    background: radial-gradient(circle at 32% 30%, #e07a63, #8a2a1c 70%);
+    box-shadow: 0 2px 3px rgba(32, 28, 21, 0.4);
+  }
+  .pinned-card:nth-child(3n+1) { transform: rotate(-0.6deg); }
+  .pinned-card:nth-child(3n+2) { transform: rotate(0.5deg); }
+  .pinned-card:nth-child(3n)   { transform: rotate(-0.2deg); }
+
+  .panel {
+    @apply relative bg-paper-card border border-rule/70 rounded-xl2;
+  }
+
+  .eyebrow {
+    @apply font-display text-[0.7rem] uppercase tracking-[0.14em] text-ink-600;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl2 px-4 py-2 text-sm font-semibold
+      transition-transform duration-150 disabled:opacity-40 disabled:cursor-not-allowed active:translate-y-px;
+  }
+  .btn-primary {
+    @apply btn bg-pin text-paper-card hover:bg-pin-soft;
+  }
+  .btn-ghost {
+    @apply btn bg-transparent text-ink-800 border border-rule hover:border-ink-400 hover:bg-paper-deep/60;
+  }
+  .field-label {
+    @apply block text-xs uppercase tracking-wide text-ink-600 mb-1.5;
+  }
+  .field-input {
+    @apply w-full rounded-xl2 bg-paper-card border border-rule px-3 py-2 text-sm text-ink-950
+      placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-pin/50 focus:border-pin/60;
+  }
+}
