@@ -49,13 +49,50 @@ URL publicly, and use a host that gives you a hard-to-guess URL (Render's defaul
 - A **`POST /api/scan`** endpoint exists for triggering a look from outside (e.g. a
   Claude scheduled task) — entirely optional, see below.
 
-This needs a host that can run one persistent Node/Docker process (Playwright needs a
-real, long-lived browser process — it does not work on a serverless/edge platform like
-Vercel's default runtime). Render, Railway, and Fly.io are the common options; a
-`render.yaml` is included as one path. Check each provider's current pricing/free-tier
-terms yourself since they change.
+This needs something that can run one persistent Node/browser process (Playwright needs
+a real, long-lived browser process — it does not work on a serverless/edge platform like
+Vercel's default runtime). Two ways to run it:
 
-## Deploying (Render, using the included `render.yaml`)
+## Option A: run it on your own PC (recommended — free, no signup, no card)
+
+Most "free" cloud hosts now ask for a credit card even on their free tier (anti-abuse
+verification), which defeats the point for a small personal tool like this. Running it
+on your own computer sidesteps that completely — the only tradeoff is it only watches
+Marketplace while that computer is on and connected to the internet. Notifications still
+reach your phone fine either way, since it's this PC calling out to ntfy.sh, not the
+other way around.
+
+**One-shot setup:**
+
+1. Make sure you have [Node.js](https://nodejs.org) installed (18 or newer).
+2. Clone this repo, open PowerShell in that folder, and run:
+   ```
+   .\setup.ps1
+   ```
+3. It installs everything, asks a few plain questions (location, distance, schedule,
+   what you're looking for), configures and starts the app, and optionally adds a
+   shortcut to your Startup folder so it starts automatically at login.
+4. The one thing it can't do for you: open **http://localhost:3000/settings** and paste
+   your exported Facebook cookies (see step 2 under "First-time setup" below for how).
+
+Re-run `.\setup.ps1` any time to add more items or change your answers — it won't touch
+an existing `.env` or duplicate settings, though re-adding the same want ad will create
+a second copy (delete the old one from the Want Ads page if that happens).
+
+If you skipped the auto-start prompt or want to add it later: press **Win+R**, type
+`shell:startup`, press Enter, then drag `start.bat` from this folder into the window
+that opens.
+
+## Option B: deploy to a cloud host
+
+If you'd rather not depend on your own PC being on, or want the dashboard reachable from
+anywhere, you can deploy it instead — just know most hosts will ask for a payment method
+even on a "free" tier, since Playwright needs enough resources (and a persistent disk)
+that pure free tiers rarely qualify. Render, Railway, and Fly.io are the common options;
+a `render.yaml` is included for Render specifically. Check each provider's current
+pricing/free-tier terms yourself since they change.
+
+### Deploying to Render (using the included `render.yaml`)
 
 1. Push this repo to GitHub (already done if you're reading this from the repo).
 2. In Render: **New → Blueprint**, point it at this GitHub repo. It reads `render.yaml`
@@ -76,7 +113,7 @@ a mounted persistent volume works:
    env var — see `.env.example` for the optional `SCAN_API_KEY`.
 4. Expose port `3000`.
 
-## First-time setup once it's deployed
+## First-time setup (manual, if you didn't use `setup.ps1`)
 
 1. **Settings → Search area**: type a city or zip code and how far you're willing to
    travel. This applies to every want ad — no need to repeat it per item.
@@ -112,7 +149,7 @@ minutes so it doesn't block on the run finishing. If `SCAN_API_KEY` is never set
 endpoint is open (consistent with the rest of the app having no login) — fine for a
 personal deployment, just know it's there.
 
-## Local development
+## Local development (for editing the code, not just running it)
 
 ```
 npm install
