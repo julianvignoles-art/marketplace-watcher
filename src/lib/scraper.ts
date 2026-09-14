@@ -3,7 +3,8 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "./db";
 import { decryptSecret } from "./crypto";
 import { matchesCriteria, parsePrice, type ScrapedListing } from "./matcher";
-import { sendWebhookNotification, type NotifyMatch } from "./notify";
+import { sendNotifications, type NotifyMatch } from "./notify";
+import { geocodeLocation, type LatLon } from "./geocode";
 
 const MIN_DELAY_MS = 5000;
 const MAX_DELAY_MS = 12000;
@@ -28,7 +29,11 @@ async function loadCookies(): Promise<Cookie[]> {
   return parsed as Cookie[];
 }
 
-function buildSearchUrl(item: { keywords: string; minPrice: number | null; maxPrice: number | null; category: string }): string {
+function buildSearchUrl(
+  item: { keywords: string; minPrice: number | null; maxPrice: number | null; category: string },
+  home: LatLon | null,
+  radiusMiles: number | null
+): string {
   const primary = item.keywords.split(",")[0]?.trim() ?? "";
   const base = item.category
     ? `https://www.facebook.com/marketplace/category/${encodeURIComponent(item.category)}`
@@ -37,6 +42,11 @@ function buildSearchUrl(item: { keywords: string; minPrice: number | null; maxPr
   if (primary) params.set("query", primary);
   if (item.minPrice != null) params.set("minPrice", String(item.minPrice));
   if (item.maxPrice != null) params.set("maxPrice", String(item.maxPrice));
+  if (home) {
+    params.set("latitude", String(home.lat));
+    params.set("longitude", String(home.lon));
+  }
+  if (radiusMiles != null) params.set("radius", String(radiusMiles));
   return `${base}/?${params.toString()}`;
 }
 
@@ -116,6 +126,20 @@ export async function runScan(trigger: "manual" | "internal-cron" | "external"):
       return { itemsScanned: 0, newListings: 0, errors: [] };
     }
 
+    const [locationSetting, radiusSetting] = await Promise.all([
+      prisma.setting.findUnique({ where: { key: "home_location" } }),
+      prisma.setting.findUnique({ where: { key: "home_radius_miles" } }),
+    ]);
+    let home: LatLon | null = null;
+    if (locationSetting?.value) {
+      try {
+        home = await geocodeLocation(locationSetting.value);
+      } catch (err) {
+        errors.push(err instanceof Error ? err.message : String(err));
+      }
+    }
+    const radiusMiles = radiusSetting?.value ? Number(radiusSetting.value) : null;
+
     const browser = await chromium.launch({ headless: true });
     try {
       const context = await browser.newContext({
@@ -130,7 +154,7 @@ export async function runScan(trigger: "manual" | "internal-cron" | "external"):
 
       for (const item of wishlistItems) {
         try {
-          const url = buildSearchUrl(item);
+          const url = buildSearchUrl(item, home, radiusMiles);
           await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
           await page.waitForTimeout(2000 + Math.random() * 1500);
           await assertNotLoggedOut(page);
@@ -190,7 +214,7 @@ export async function runScan(trigger: "manual" | "internal-cron" | "external"):
       }
 
       if (allNotifications.length > 0) {
-        await sendWebhookNotification(allNotifications);
+        await sendNotifications(allNotifications);
       }
     } finally {
       await browser.close();

@@ -9,13 +9,7 @@ services:
       mountPath: /data
       sizeGB: 1
     envVars:
-      - key: APP_PASSWORD
-        sync: false
       - key: APP_SECRET
         generateValue: true
-      - key: SCAN_API_KEY
-        generateValue: true
-      - key: SCAN_INTERVAL_MINUTES
-        value: "60"
       - key: DATABASE_URL
         value: "file:/data/app.db"

@@ -8,8 +8,6 @@ const WishlistPatch = z.object({
   excludeWords: z.string().max(300).optional(),
   maxPrice: z.number().int().positive().nullable().optional(),
   minPrice: z.number().int().nonnegative().nullable().optional(),
-  location: z.string().max(120).optional(),
-  radiusMiles: z.number().int().positive().max(500).optional(),
   category: z.string().max(80).optional(),
   active: z.boolean().optional(),
 });

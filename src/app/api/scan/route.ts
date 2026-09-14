@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkScanApiKey, isValidSessionCookieValue, SESSION_COOKIE_NAME } from "@/lib/auth";
+import { checkScanApiKey } from "@/lib/auth";
 import { runScan } from "@/lib/scraper";
 import { prisma } from "@/lib/db";
 
@@ -11,10 +11,7 @@ let scanInFlight = false;
 // open for the full run. Poll GET /api/scan for status.
 export async function POST(req: NextRequest) {
   const apiKey = req.headers.get("x-api-key");
-  const cookie = req.cookies.get(SESSION_COOKIE_NAME)?.value;
-
-  const authorized = checkScanApiKey(apiKey) || isValidSessionCookieValue(cookie);
-  if (!authorized) {
+  if (!checkScanApiKey(apiKey)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
@@ -23,8 +20,7 @@ export async function POST(req: NextRequest) {
   }
 
   scanInFlight = true;
-  const trigger = checkScanApiKey(apiKey) ? "external" : "manual";
-  runScan(trigger)
+  runScan(apiKey ? "external" : "manual")
     .catch((err) => {
       console.error("[scan] uncaught error", err);
     })

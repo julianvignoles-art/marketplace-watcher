@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
-const ALLOWED_KEYS = ["webhook_url"];
+const ALLOWED_KEYS = [
+  "webhook_url",
+  "ntfy_topic",
+  "home_location",
+  "home_radius_miles",
+  "scan_days",
+  "scan_interval_minutes",
+];
 
 export async function GET() {
   const rows = await prisma.setting.findMany({ where: { key: { in: ALLOWED_KEYS } } });

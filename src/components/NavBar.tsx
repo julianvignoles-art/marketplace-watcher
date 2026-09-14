@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 const LINKS = [
   { href: "/", label: "The Board" },
@@ -11,15 +11,6 @@ const LINKS = [
 
 export function NavBar() {
   const pathname = usePathname();
-  const router = useRouter();
-
-  if (pathname === "/login") return null;
-
-  async function logout() {
-    await fetch("/api/logout", { method: "POST" });
-    router.push("/login");
-    router.refresh();
-  }
 
   return (
     <header className="bg-paper">
@@ -42,12 +33,6 @@ export function NavBar() {
                 {link.label}
               </Link>
             ))}
-            <button
-              onClick={logout}
-              className="ml-2 rounded-xl2 px-3 py-1.5 text-sm text-ink-600 hover:text-pin"
-            >
-              Log out
-            </button>
           </nav>
         </div>
         <div className="border-t-[3px] border-ink-950 pt-[3px]">

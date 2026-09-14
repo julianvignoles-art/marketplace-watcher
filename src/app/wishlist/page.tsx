@@ -9,8 +9,6 @@ interface WishlistItem {
   excludeWords: string;
   maxPrice: number | null;
   minPrice: number | null;
-  location: string;
-  radiusMiles: number;
   category: string;
   active: boolean;
   _count: { listings: number };
@@ -22,8 +20,6 @@ const emptyForm = {
   excludeWords: "",
   maxPrice: "",
   minPrice: "",
-  location: "",
-  radiusMiles: "40",
   category: "",
 };
 
@@ -57,8 +53,6 @@ export default function WishlistPage() {
       excludeWords: form.excludeWords,
       maxPrice: form.maxPrice ? Number(form.maxPrice) : null,
       minPrice: form.minPrice ? Number(form.minPrice) : null,
-      location: form.location,
-      radiusMiles: Number(form.radiusMiles) || 40,
       category: form.category,
     };
 
@@ -167,25 +161,10 @@ export default function WishlistPage() {
                 onChange={(e) => setForm({ ...form, maxPrice: e.target.value })}
               />
             </div>
-            <div>
-              <label className="field-label">Location text (optional)</label>
-              <input
-                className="field-input"
-                placeholder="Used for your own reference"
-                value={form.location}
-                onChange={(e) => setForm({ ...form, location: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="field-label">Radius (miles)</label>
-              <input
-                type="number"
-                className="field-input"
-                value={form.radiusMiles}
-                onChange={(e) => setForm({ ...form, radiusMiles: e.target.value })}
-              />
-            </div>
           </div>
+          <p className="text-xs text-ink-400">
+            Searches near the location and distance set once in Settings — no need to repeat it here.
+          </p>
 
           {error && <p className="text-sm text-pin">{error}</p>}
 

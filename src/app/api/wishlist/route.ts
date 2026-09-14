@@ -8,8 +8,6 @@ const WishlistInput = z.object({
   excludeWords: z.string().max(300).optional().default(""),
   maxPrice: z.number().int().positive().nullable().optional(),
   minPrice: z.number().int().nonnegative().nullable().optional(),
-  location: z.string().max(120).optional().default(""),
-  radiusMiles: z.number().int().positive().max(500).optional().default(40),
   category: z.string().max(80).optional().default(""),
   active: z.boolean().optional().default(true),
 });

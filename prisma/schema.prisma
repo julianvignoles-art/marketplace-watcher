@@ -14,13 +14,21 @@ model WishlistItem {
   excludeWords  String  @default("") // comma-separated, none may appear
   maxPrice      Int? // in whole currency units, null = no ceiling
   minPrice      Int?
-  location      String  @default("") // free-text place name used to build the search URL
-  radiusMiles   Int      @default(40)
   category      String  @default("") // optional FB category slug
   active        Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   listings      Listing[]
+}
+
+// Caches a free-text place name -> lat/lon lookup (via OpenStreetMap Nominatim,
+// which needs no API key) so every scan doesn't re-geocode the same home
+// location and so we stay well under Nominatim's usage-policy rate limit.
+model GeocodeCache {
+  query    String   @id // lowercased, trimmed input text
+  lat      Float
+  lon      Float
+  cachedAt DateTime @default(now())
 }
 
 model Listing {
