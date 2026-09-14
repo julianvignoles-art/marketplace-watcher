@@ -11,6 +11,8 @@ interface Listing {
   imageUrl: string;
   locationText: string;
   firstSeenAt: string;
+  flagged: boolean;
+  flagReason: string;
   wishlistItem: { label: string };
 }
 
@@ -66,10 +68,24 @@ export const ListingGrid = forwardRef<ListingGridHandle>(function ListingGrid(_p
       {listings.map((l) => (
         <div
           key={l.id}
-          className="pinned-card group flex flex-col transition-transform hover:!rotate-0 hover:z-10"
+          className={`pinned-card group flex flex-col transition-transform hover:!rotate-0 hover:z-10 ${
+            l.flagged ? "outline outline-2 outline-brass/70" : ""
+          }`}
         >
+          {l.flagged && (
+            <div
+              className="rounded-t-xl2 border-b border-brass/40 bg-brass/15 px-3 py-1.5 text-xs text-brass"
+              title={l.flagReason}
+            >
+              ⚠ {l.flagReason || "Worth a second look"}
+            </div>
+          )}
           <a href={l.url} target="_blank" rel="noreferrer noopener" className="flex flex-1 flex-col">
-            <div className="aspect-[4/3] w-full overflow-hidden rounded-t-xl2 border-b border-rule/70 bg-paper-deep">
+            <div
+              className={`aspect-[4/3] w-full overflow-hidden border-b border-rule/70 bg-paper-deep ${
+                l.flagged ? "" : "rounded-t-xl2"
+              }`}
+            >
               {l.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img

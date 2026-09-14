@@ -45,6 +45,8 @@ model Listing {
   firstSeenAt    DateTime     @default(now())
   dismissed      Boolean      @default(false)
   notifiedAt     DateTime?
+  flagged        Boolean      @default(false) // description-check found a possible issue
+  flagReason     String       @default("")
 
   @@unique([wishlistItemId, fbItemId])
 }

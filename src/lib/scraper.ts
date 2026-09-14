@@ -5,6 +5,7 @@ import { decryptSecret } from "./crypto";
 import { matchesCriteria, parsePrice, type ScrapedListing } from "./matcher";
 import { sendNotifications, type NotifyMatch } from "./notify";
 import { geocodeLocation, type LatLon } from "./geocode";
+import { checkDescription } from "./descriptioncheck";
 
 const MIN_DELAY_MS = 5000;
 const MAX_DELAY_MS = 12000;
@@ -93,6 +94,12 @@ async function extractListings(page: import("playwright").Page): Promise<Scraped
   return out;
 }
 
+async function extractItemPageText(page: import("playwright").Page, url: string): Promise<string> {
+  await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
+  await page.waitForTimeout(1500 + Math.random() * 1000);
+  return page.evaluate(() => document.body.innerText);
+}
+
 async function assertNotLoggedOut(page: import("playwright").Page): Promise<void> {
   const loginField = await page.$('input[name="email"], input[name="pass"]');
   if (loginField) {
@@ -171,6 +178,43 @@ export async function runScan(trigger: "manual" | "internal-cron" | "external"):
 
           for (const listing of matched) {
             const price = parsePrice(listing.priceText);
+
+            // Already-seen listings are about to hit the unique-constraint
+            // skip below anyway, so don't waste a page load re-checking them.
+            const alreadySeen = await prisma.listing.findUnique({
+              where: { wishlistItemId_fbItemId: { wishlistItemId: item.id, fbItemId: listing.fbItemId } },
+              select: { id: true },
+            });
+            if (alreadySeen) continue;
+
+            let flagged = false;
+            let flagReason = "";
+            let excluded = false;
+            try {
+              const pageText = await extractItemPageText(page, listing.url);
+              const result = checkDescription({
+                pageText,
+                listedPrice: price,
+                maxPrice: item.maxPrice,
+                excludeWords: item.excludeWords,
+              });
+              excluded = result.excluded;
+              flagged = result.flagged;
+              flagReason = result.reasons.join("; ");
+              await randomDelay(MIN_DELAY_MS, MAX_DELAY_MS);
+            } catch (err) {
+              // If the description check itself fails (page didn't load, got
+              // logged out mid-scan, etc.) don't let that sink the whole
+              // listing — just save it unflagged rather than lose a match.
+              errors.push(
+                `${item.label}: description check failed for ${listing.fbItemId}: ${
+                  err instanceof Error ? err.message : String(err)
+                }`
+              );
+            }
+
+            if (excluded) continue;
+
             try {
               const created = await prisma.listing.create({
                 data: {
@@ -181,6 +225,8 @@ export async function runScan(trigger: "manual" | "internal-cron" | "external"):
                   url: listing.url,
                   imageUrl: listing.image,
                   locationText: listing.location,
+                  flagged,
+                  flagReason,
                 },
               });
               newListingsTotal += 1;
